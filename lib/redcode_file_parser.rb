@@ -1,23 +1,52 @@
 module CoreWar
-  
   class RedcodeFileParser
     
-    ALLOWED_COMMANDS = %w(MOV ADD SUB MUL DIV MOD JMP JMZ JMG DJZ CMP SEQ SNE DAT)
+    ALLOWED_COMMANDS = %w(MOV ADD SUB MUL DIV MOD JMP JMZ JMG DJZ CMP SEQ SNE DAT SPL DJN ORG)
 
     ALLOWED_ADRESSES_TYPES = %w($ # < > @)
 
-    attr_reader :commands_list
+    attr_reader :commands
+
+    
 
     def initialize(opts = {})
-      @commands_list = []
+      @commands = []
     end
 
-    def parse_file(file, dir = File.expand_path(File.dirname(__FILE__)))
-      File.open(File.join(dir, file)).each_line { |line| parse_line(line) }
-      finish_parsing
+    def parse_file(file)
+      File.open(file).each_line { |line| parse_line(line) }
+      @commands
     end
 
-    def parse_line(command_line)
+    def parse_line(raw_line)
+      validated_command(raw_line) do |cmd_name, operands| 
+        cmd = build_command(cmd_name, operands)
+        @commands << cmd
+        cmd
+      end
+    end
+
+
+
+    private
+
+    def build_command(cmd_name, operands )
+      command = {}
+      command[:index] = @commands.length
+      command[:name]  = cmd_name
+      command[:operands] = []
+
+      operands.each do |op|
+        mtch = op.match(/(?<type>[$#\@<>])*(?<value>.+)/)
+        command[:operands] << { type: "#{mtch[:type] || '$'}", value: mtch[:value].to_i, absolute_adr: nil }
+      end
+      command
+    end
+      
+
+
+
+    def validated_command(command_line)
       splitted_line = command_line.split(" ")
       operands = []
       cmd_name = splitted_line[0]
@@ -40,24 +69,9 @@ module CoreWar
 
       raise MaliciousFile if !ALLOWED_COMMANDS.include?(cmd_name) || !operands_correct?(operands)
 
-      operands.map! do |op|
-        mtch = op.match(/(?<type>[$#\@<>])*(?<value>.+)/)
-        { type: mtch[:type].to_s, value: mtch[:value].to_i, absolute_adr: nil }
-      end  
-      
-      cmd = { index: @commands_list.length, name: cmd_name, operands: operands }
-      @commands_list << cmd
-      cmd
-
+      yield(cmd_name, operands)
     end
 
-    def finish_parsing
-      @commands_list
-    end
-
-
-    
-    private
 
     def operands_correct?(op)
       [op].flatten.all? do |o|

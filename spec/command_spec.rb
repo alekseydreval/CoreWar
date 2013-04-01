@@ -12,7 +12,7 @@
 
         it "refers to cell with index 0 when [ADD 101, #13] is called for fieldset of 100 cells" do
           @parser.parse_line("ADD 101, #13")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[0].exec
           bg.cells[0].operands[1][:value].should == 26
@@ -25,10 +25,31 @@
 
         it "executes MOV command [MOV #12, 14]" do
           @parser.parse_line("MOV #12, #14")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[0].exec
           bg.cells[0].operands[1][:value].should == 12
+        end
+
+        it "executes MOV command [MOV 0, 1]" do
+          @parser.parse_line("MOV 0, 1")
+          bg = BattleGround.new(@parser.commands)
+
+          bg.cells[0].exec
+          bg.cells[1].operands[0][:value].should == 0
+          bg.cells[1].operands[1][:value].should == 1
+          bg.cells[1].name.should == "MOV"
+        end
+
+        it "executes MOV command [MOV <-2, 1]" do
+          @parser.parse_line("JMP #44")
+          @parser.parse_line("DAT 0, -1")
+          @parser.parse_line("MOV >-1, 1")
+          bg = BattleGround.new(@parser.commands)
+
+          bg.cells[2].exec
+          bg.cells[3].name.should == "JMP"
+          bg.cells[1].operands[1][:value].should == 0
         end
 
       end
@@ -38,7 +59,7 @@
         it "executes ADD command [ADD #99, -1]" do
           @parser.parse_line("ADD #99, +1")
           @parser.parse_line("DAT #99, #11")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[0].exec
           bg.cells[1].operands[1][:value].should == 110
@@ -51,7 +72,7 @@
           @parser.parse_line("MOV 0, #19")
           @parser.parse_line("MOV #5, #5")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
           bg.cells[1].exec
           bg.cells[0].operands[1][:value].should == 4
           bg.cells[2].operands[1][:value].should == 2
@@ -65,7 +86,7 @@
           @parser.parse_line("DAT 1, 1")
           @parser.parse_line("DAT 1, 44")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
           bg.cells[0].exec 
           bg.cells[3].operands[1][:value].should == 88
 
@@ -76,7 +97,7 @@
           @parser.parse_line("ADD <-1, >1")
           @parser.parse_line("DAT 1, 44")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
           bg.cells[0].exec 
           bg.cells[0].operands[1][:value].should == 57
           bg.cells[1].operands[1][:value].should == 2
@@ -84,7 +105,7 @@
 
         it "executes ADD command to self [ADD -10, #-2]" do
           @parser.parse_line('ADD #-10, #-2')
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[0].exec
           bg.cells[0].operands[1][:value].should == -12
@@ -93,7 +114,7 @@
         it "executes SUB command [SUB #5, -1]" do
           @parser.parse_line("DAT 0, #-2")
           @parser.parse_line("SUB #5, -1")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[1].exec
           bg.cells[0].operands[1][:value].should == -7
@@ -102,7 +123,7 @@
         it "executes MUL command to self [MUL #-3, #10]" do
           @parser.parse_line("MUL #3, #-2")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[0].exec
           bg.cells[0].operands[1][:value].should == -6
@@ -111,7 +132,7 @@
         it "executes MUL command [MUL -1, -1]" do
           @parser.parse_line('ADD  6, 7')
           @parser.parse_line("MUL -1, -1")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[1].exec
           bg.cells[0].operands[1][:value].should == 49
@@ -120,7 +141,7 @@
         it "executes DIV command [DIV #2, #42]" do
           @parser.parse_line('ADD  6, 7')
           @parser.parse_line("DIV #-2, -1")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[1].exec
           bg.cells[0].operands[1][:value].should == -4
@@ -128,14 +149,14 @@
 
         it "handles DIV by zero command!" do
           @parser.parse_line("DIV #-0, #5")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           expect { bg.cells[0].exec }.to raise_error
         end
 
         it "executes MOD command [MOD #3, #10]" do
           @parser.parse_line("MOD #3, #10")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           bg.cells[0].exec
           bg.cells[0].operands[1][:value].should == 1
@@ -146,7 +167,7 @@
           @parser.parse_line("MOD @-1, #40")
           @parser.parse_line("ADD 3, 9")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
           
           bg.cells[1].exec
           bg.cells[1].operands[1][:value].should == 4
@@ -157,7 +178,7 @@
           @parser.parse_line("MOD #3, >-1")
           @parser.parse_line("ADD 3, 10")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
           bg.cells[1].exec
           bg.cells[2].operands[1][:value].should == 1
           bg.cells[0].operands[1][:value].should == 3
@@ -168,7 +189,7 @@
           @parser.parse_line("MOD #3, <-1")
           @parser.parse_line("ADD 3, 10")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
           bg.cells[0].operands[1][:value].should == 3
           bg.cells[1].exec
           bg.cells[0].operands[1][:value].should == 2
@@ -185,7 +206,7 @@
             @parser.parse_line("DIV #2, #10")
             @parser.parse_line("JMP 19")
 
-            bg = BattleGround.new(@parser.finish_parsing)
+            bg = BattleGround.new(@parser.commands)
 
             iter = bg.to_enum(:each)
           
@@ -196,7 +217,7 @@
 
           it "raises ZeroDivisionError when DIV by zero executed" do
             @parser.parse_line("DIV #0, #13")
-            bg = BattleGround.new(@parser.finish_parsing)
+            bg = BattleGround.new(@parser.commands)
 
             expect { bg.to_enum(:each).next }.to raise_error(ZeroDivisionError)
           end
@@ -205,7 +226,7 @@
 
         it "jumps to certain adress" do
           @parser.parse_line("JMP +42")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           iter = bg.to_enum(:each)
           
@@ -217,7 +238,7 @@
           @parser.parse_line("ADD #3, 42")
           @parser.parse_line("SUB 0, 0")
           @parser.parse_line("JMP @-2")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
 
           iter = bg.to_enum(:each)
@@ -235,7 +256,7 @@
           @parser.parse_line("SUB 0, 0")
           @parser.parse_line("ADD 1, 1")
 
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           iter = bg.to_enum(:each)
           iter.next
@@ -248,7 +269,7 @@
           @parser.parse_line("SUB 0, 1")
           @parser.parse_line("SUB 0, 1")
           @parser.parse_line("DAT 0, #3")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           iter = bg.to_enum(:each)
 
@@ -260,7 +281,7 @@
           @parser.parse_line("SUB 0, 1")
           @parser.parse_line("SUB 0, #1")
           @parser.parse_line("DAT 0, #4")
-          bg = BattleGround.new(@parser.finish_parsing)
+          bg = BattleGround.new(@parser.commands)
 
           iter = bg.to_enum(:each)
         end

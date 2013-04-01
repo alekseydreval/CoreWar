@@ -4,14 +4,16 @@ module CoreWar
     attr_accessor :index, :name, :operands, :left_adress, :right_adress, :go_left_operand, :go_right_operand, :jumped_to
 
     def initialize(battleground, cell)
+      @threads_to_add = battleground.threads_to_add
       @cells = battleground.cells
       @index = cell[:index]
       @name  = cell[:name]
       @operands = cell[:operands]
+      @jumped_to = @index + 1
     end
 
     def exec
-      @operands = expand_operands(@operands)
+      @operands = expand_adresses(@operands)
       check_for_decrement
       send @name.downcase.to_sym
       check_for_increment
@@ -55,7 +57,7 @@ module CoreWar
     
     #calculates absolute adressing for operands with types @, >, <
     #NOTE that no increment/decrement goes here
-    def expand_operands(operands)
+    def expand_adresses(operands)
       operands.map do |op|
         op[:absolute_adr] = 
           if op[:type] == "#"
@@ -87,6 +89,7 @@ module CoreWar
       intermediate_cells.each_with_index do |c, i| 
         next if c.nil?
         c.operands[1][:value] += 1 if @operands[i][:type] == ">"  
+        p c
       end
     end
 
@@ -100,10 +103,18 @@ module CoreWar
       (left_adress =~ /#/) ? operands[0][:value] : go_left_adress.operands[1][:value]
     end
 
-
+    
+    def spl
+      @threads_to_add << go_left_adress.index
+    end
 
     def mov
-      destination[:value] = source_data
+      if left_adress =~ /#/
+        destination[:value] = source_data
+      else
+        go_right_adress.name     = go_left_adress.name
+        go_right_adress.operands = go_left_adress.operands
+      end
     end
 
     
@@ -141,9 +152,25 @@ module CoreWar
       @jumped_to = left_adress if (destination[:value] == 0)
     end
 
+    def jmn
+      return if left_adress =~ /#/
+      @jumped_to = left_adress if (destination[:value] != 0)
+    end
+
+
+
+    def djn
+      return if left_adress =~ /#/
+      @jumped_to = right_adress if destination[:value] != 0
+    end
+
 
     def cmp
-      @jumped_to = @index +2 if destination[:value] == source_data
+      @jumped_to = @index + 2 if destination[:value] == source_data
+    end
+
+    def org
+      @jumped_to = jmp + 1
     end
     
     #... 
