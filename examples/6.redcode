@@ -1,4 +1,4 @@
 ORG 1
 DAT 0,1
-ADD >1,$-1
+ADD 0,<-1
 DAT 0,-2

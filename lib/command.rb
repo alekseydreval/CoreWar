@@ -14,7 +14,7 @@ module CoreWar
 
     def exec
       @operands = expand_adresses(@operands)
-      check_for_decrement
+      check_for_decrement unless @already_checked
       send @name.downcase.to_sym
       check_for_increment
       self
@@ -25,6 +25,13 @@ module CoreWar
     end
 
 
+    def expand_complex_adresses
+      return if dat?
+      adr = expand_adresses(@operands)
+      check_for_decrement
+      @already_checked = true
+      adr.select { |op| p op[:type];["@", ">", "<", "$"].include? op[:type] }.map { |op| op[:absolute_adr] }.compact
+    end
 
 
     def left_adress
@@ -36,11 +43,11 @@ module CoreWar
     end
 
     def go_left_adress
-      @cells[left_adress]
+      @cells[left_adress] rescue self
     end
 
     def go_right_adress
-      @cells[right_adress]
+      @cells[right_adress] rescue self
     end
 
     def intermediate_cells

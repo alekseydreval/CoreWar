@@ -3,10 +3,7 @@ module CoreWar
     
     ALLOWED_COMMANDS = %w(MOV ADD SUB MUL DIV MOD JMP JMZ JMG DJZ CMP SEQ SNE DAT SPL DJN ORG)
 
-    ALLOWED_ADRESSES_TYPES = %w($ # < > @)
-
     attr_reader :commands
-
     
 
     def initialize(opts = {})
@@ -18,9 +15,8 @@ module CoreWar
       @commands
     end
 
-    def parse_line(raw_line)
-      validated_command(raw_line) do |cmd_name, operands| 
-        cmd = build_command(cmd_name, operands)
+    def parse_line(command_line)
+      build_command(command_line) do |cmd| 
         @commands << cmd
         cmd
       end
@@ -30,57 +26,29 @@ module CoreWar
 
     private
 
-    def build_command(cmd_name, operands )
-      command = {}
-      command[:index] = @commands.length
-      command[:name]  = cmd_name
-      command[:operands] = []
+    def build_command(command_line)
+      m = command_line.match /(?<cmd_name>[a-zA-Z]{3})\s+
+                              (?<operand_1>
+                                (?<type_1>[#\$\@><])?
+                                (?<value_1>[-+]?[0-9]+))
+                              (\s*,\s*(?<operand_2>
+                                (?<type_2>[\$#\@><])?
+                                (?<value_2>[-+]?[0-9]+)))?
+                             /xi
 
-      operands.each do |op|
-        mtch = op.match(/(?<type>[$#\@<>])*(?<value>.+)/)
-        command[:operands] << { type: "#{mtch[:type] || '$'}", value: mtch[:value].to_i, absolute_adr: nil }
-      end
-      command
-    end
+      raise MaliciousFile if m[:cmd_name].nil?  ||
+                             m[:operand_1].nil? ||
+                             !ALLOWED_COMMANDS.include?(m[:cmd_name])
       
+      command = {}
+      command[:index]    = @commands.length
+      command[:name]     = m[:cmd_name]
+      command[:operands] = []
+      command[:operands] << { type: m[:type_1] || '$' , value: m[:value_1].to_i }
+      command[:operands] << { type: m[:type_2] || '$' , value: m[:value_2].to_i } if m[:operand_2]
 
+      yield command
 
-
-    def validated_command(command_line)
-      splitted_line = command_line.split(" ")
-      operands = []
-      cmd_name = splitted_line[0]
-
-      if splitted_line.size == 2
-        if (ops = splitted_line[1].split(',')).size == 2 #[ADD 3,9]
-          operands.concat ops
-        elsif !splitted_line[1][','] #skip cases like: [MOV +3,]
-          operands << splitted_line[1] #[JMP +3]
-        else
-         raise MaliciousFile
-       end
-      elsif splitted_line.size == 4 #[JMZ @-1 , >+2]
-        operands << splitted_line[1] << splitted_line[4] 
-      elsif splitted_line.size == 3 && (ops = splitted_line[1..2].join)[','] #[SUB <2, -42] or [SUB <2 ,-42]
-        operands.concat ops.split(',')
-      else
-        raise MaliciousFile
-      end
-
-      raise MaliciousFile if !ALLOWED_COMMANDS.include?(cmd_name) || !operands_correct?(operands)
-
-      yield(cmd_name, operands)
-    end
-
-
-    def operands_correct?(op)
-      [op].flatten.all? do |o|
-        if ALLOWED_ADRESSES_TYPES.include? o[0]
-          o[1..-1].to_i.to_s == o[1..-1] || o[1..-1].to_i.to_s == o[2..-1]
-        else
-          o.to_i.to_s == o || o.to_i.to_s == o[1..-1]
-        end
-      end
     end
 
   end  

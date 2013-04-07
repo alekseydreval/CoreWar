@@ -1,4 +1,6 @@
-ORG 1
+ORG 2
 DAT 0,1
-ADD @1,$1
+DAT 0,#3
+ADD <2,$1
 DAT 0,-2
+DAT 0, 99
