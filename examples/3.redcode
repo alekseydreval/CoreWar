@@ -1,6 +1,6 @@
 ORG 2                  
 DAT 0,1                     
-DAT 0,2                      
+DIV #0,2                      
 MOV @-2,@-1                
 DAT 0,1
 DAT 0,2

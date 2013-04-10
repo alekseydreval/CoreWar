@@ -7,9 +7,8 @@ require "./tk_ui.rb"
 module CoreWar
 	class Game
 
-		def initialize(parser = RedcodeFileParser.new)
+		def initialize 
 			@views = []
-      @parser = parser
       @parrsed_commands = []
       @bg = nil
 		end
@@ -27,7 +26,7 @@ module CoreWar
     #Game Actions
 
 		def load_file(file_name)
-			@parrsed_commands = @parser.parse_file(file_name)
+			@parrsed_commands = RedcodeFileParser.new.parse_file(file_name)
 			@bg = BattleGround.new(@parrsed_commands)
 			@iter = @bg.each
 			notify_views(:file_loaded, @bg.cells)
@@ -42,7 +41,7 @@ module CoreWar
 
 
 
-			next_cell           = @bg.cells[executed_cell.jumped_to]
+	    next_cell           = @bg.cells[executed_cell.jumped_to]
       next_expanded_cells = next_cell.expand_complex_adresses || []
       next_interm_cells   = next_cell.intermediate_cells.compact.map(&:index)
 
@@ -52,6 +51,7 @@ module CoreWar
 		               next_interm_cells,
 		               next_expanded_cells)
 		end
+
 
 		def reset_cells
 			@bg = BattleGround.new(@parrsed_commands)

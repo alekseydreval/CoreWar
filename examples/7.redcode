@@ -1,4 +1,4 @@
 ORG 2
 DAT 0,0                      
 DAT 0,-4                     
-SUB #5, @1               
+MOV #5,>-1                 

@@ -10,6 +10,8 @@ module CoreWar
 
     CELLS_COUNT = 994
 
+    attr_reader :game
+
 
 
     def initialize(game)
@@ -18,7 +20,7 @@ module CoreWar
 
       pack_tk do 
         @commands_list = init_commands_list
-        init_buttons
+        @buttons = init_buttons
         @canvas = init_canvas
         @rectangles = init_default_cells
       end
@@ -30,16 +32,10 @@ module CoreWar
     #These methods are called by Game controller as rendered response
     #
     def file_loaded(commands)
-      # @commands_list.delete 0, @commands_list.size-10
-      # @commands_list.delete 1
-      # @commands_list.delete 2
-      # @commands_list.size.times { |n| @commands_list.delete n }
-      # @commands_list.ungrid.destroy
-      # @commands_list = init_commands_list
-      # sleep 3
-      # p @commands_list.size
-      format_commands(commands) { |cmd| @commands_list.insert 'end', cmd }
+      @commands_list.delete 0, @commands_list.size
       fill_loaded_cells(commands)
+
+      format_commands(commands) { |cmd| @commands_list.insert 'end', cmd }
       highlight_next_command(0, [])
     end
 
@@ -50,37 +46,50 @@ module CoreWar
     end
 
     def game_over
-      # Tk.messageBox "message" => "Game over"
+      
     end
 
 
 
     # Triggers controller's method
     def load_commands
-      file = Tk::getOpenFile
-      @game.load_file(file) #rescue nil
+      file = Tk::getOpenFile 
+      @game.load_file(file) rescue return
     end
 
     def next_step
-      
+      begin
+        game.next_step 
+      rescue StopIteration
+        Tk.messageBox "message" => "Game over"
+        stop_iteration 
+      rescue ZeroDivisionError
+        Tk.messageBox "message" => "Division by zero!"
+        stop_iteration 
+      rescue
+        Tk.messageBox "message" => "Operand points outside the bound!"
+        stop_iteration 
+      end
     end
 
-    # def start_iteration
-    #   reset_cells
-    #   @iteration_thread = Thread.new do
-    #     while true
-    #       sleep 0.3
-    #       next_step rescue game_over
-    #     end
-    #   end
-    # end
+    def start_iteration
+      game.reset_cells
+      @iteration_thread = Thread.new do
+        while true
+          sleep 0.3
+          next_step
+        end
+      end
+    end
 
-    # def stop_iteration
-    #   Thread.kill @iteration_thread
-    #   reset_cells
-    # end
+    def stop_iteration
+      game.reset_cells
+      @stop.call
+      Thread.kill @iteration_thread
+    end
 
     def reset_cells(cells)
+
       @commands_list.size.times { |i| @commands_list.itemconfigure i, "bg"=>"white" }
       
       @restarted = true
@@ -164,8 +173,7 @@ module CoreWar
       }
       
       start = nil
-      stop  = -> do 
-        this.stop_iteration
+      @stop  = -> do 
         buttons[:iterate_or_pause].command = start
         buttons[:iterate_or_pause].text = "Start iteration"
         buttons[:load_file].state = "normal"
@@ -175,7 +183,7 @@ module CoreWar
 
       start = -> do 
         this.start_iteration
-        buttons[:iterate_or_pause].command = stop 
+        buttons[:iterate_or_pause].command = @stop 
         buttons[:iterate_or_pause].text = "Stop iteration"
         buttons[:load_file].state = "disabled"
         buttons[:next].state = "disabled"
@@ -194,7 +202,7 @@ module CoreWar
         grid('row'=>2, 'column'=>0, 'sticky'=>'w')
         text "Next step"
         width BTN_WIDTH
-        command -> { game.next_step } rescue this.game_over 
+        command -> { this.next_step }
         state "disabled"
       }
 

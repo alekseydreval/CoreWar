@@ -38,11 +38,11 @@ module CoreWar
 
       raise MaliciousFile if m[:cmd_name].nil?  ||
                              m[:operand_1].nil? ||
-                             !ALLOWED_COMMANDS.include?(m[:cmd_name])
+                             !ALLOWED_COMMANDS.include?(m[:cmd_name].upcase)
       
       command = {}
       command[:index]    = @commands.length
-      command[:name]     = m[:cmd_name]
+      command[:name]     = m[:cmd_name].upcase
       command[:operands] = []
       command[:operands] << { type: m[:type_1] || '$' , value: m[:value_1].to_i }
       command[:operands] << { type: m[:type_2] || '$' , value: m[:value_2].to_i } if m[:operand_2]

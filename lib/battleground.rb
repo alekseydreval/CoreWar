@@ -39,6 +39,9 @@ module CoreWar
 
     end
 
+    def filled_cells
+      @cells.select { |c| !c.dat? }
+    end
 
 
     private
@@ -58,9 +61,7 @@ module CoreWar
       end
     end
 
-    def filled_cells
-      @cells.select { |c| !c.dat? }
-    end
+
 
 
   end #Battleground
