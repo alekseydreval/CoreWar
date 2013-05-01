@@ -12,7 +12,7 @@ module CoreWar
 
     def parse_file(file)
       File.open(file).each_line { |line| parse_line(line) }
-      @commands
+      @commands.compact
     end
 
     def parse_line(command_line)
@@ -26,7 +26,14 @@ module CoreWar
 
     private
 
+    def remove_comment(line)
+      line.gsub(/;.*$/, '').strip
+    end
+
     def build_command(command_line)
+      command_line = remove_comment(command_line)
+      return nil if command_line.empty?
+
       m = command_line.match /(?<cmd_name>[a-zA-Z]{3})\s+
                               (?<operand_1>
                                 (?<type_1>[#\$\@><])?
