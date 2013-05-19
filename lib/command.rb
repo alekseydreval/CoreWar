@@ -161,6 +161,7 @@ module CoreWar
 
     def jmn
       return if left_adress =~ /#/
+      p destination[:value]
       @jumped_to = left_adress if (destination[:value] != 0)
     end
 

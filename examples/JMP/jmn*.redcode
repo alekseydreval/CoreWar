@@ -1,0 +1,5 @@
+ORG 0
+JMN 2, #1 ; If B is not zero, jumps to A
+DAT 99
+ADD #-1, -2
+JMP -3

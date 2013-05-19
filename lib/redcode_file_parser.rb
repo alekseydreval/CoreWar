@@ -1,7 +1,7 @@
 module CoreWar
   class RedcodeFileParser
     
-    ALLOWED_COMMANDS = %w(MOV ADD SUB MUL DIV MOD JMP JMZ JMG DJZ CMP SEQ SNE DAT SPL DJN ORG)
+    ALLOWED_COMMANDS = %w(MOV ADD SUB MUL DIV MOD JMP JMZ JMN JMG DJZ CMP SEQ SNE DAT SPL DJN ORG)
 
     attr_reader :commands
     

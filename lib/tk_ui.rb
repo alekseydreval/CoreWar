@@ -45,11 +45,6 @@ module CoreWar
       highlight_next_command(next_ind, next_expanded_indexes, next_interm_indexes)
     end
 
-    def game_over
-      
-    end
-
-
 
     # Triggers controller's method
     def load_commands
@@ -85,7 +80,7 @@ module CoreWar
     def stop_iteration
       game.reset_cells
       @stop.call
-      Thread.kill @iteration_thread
+      Thread.kill @iteration_thread if @iteration_thread
     end
 
     def reset_cells(cells)
